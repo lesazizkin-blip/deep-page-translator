@@ -1,0 +1,13 @@
+# Системные файлы
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Редакторы
+.vscode/
+.idea/
+
+# Сборки для Chrome Web Store
+*.zip
+*.crx
+*.pem

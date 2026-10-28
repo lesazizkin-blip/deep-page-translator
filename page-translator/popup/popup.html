@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <title>Deep Page Translator</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <img src="../icons/icon32.png" alt="" width="20" height="20" />
+      <span>Deep Page Translator</span>
+    </header>
+
+    <button id="toggle" class="primary" disabled>Перевести страницу</button>
+
+    <label class="field">
+      <span>Язык перевода</span>
+      <select id="targetLang"></select>
+    </label>
+
+    <label class="field">
+      <span>Провайдер</span>
+      <select id="provider"></select>
+    </label>
+
+    <label class="switch">
+      <input type="checkbox" id="auto" />
+      <span>Автоматически переводить на <b id="host">этом сайте</b></span>
+    </label>
+
+    <div id="status" class="status" hidden></div>
+
+    <footer>
+      <a href="#" id="openOptions">Настройки</a>
+      <span class="hint">Alt+T — переключить</span>
+    </footer>
+
+    <script src="../shared/constants.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

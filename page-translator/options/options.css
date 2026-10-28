@@ -1,0 +1,71 @@
+:root {
+  --bg: #f6f8fa;
+  --card: #ffffff;
+  --fg: #1f2328;
+  --muted: #656d76;
+  --border: #d0d7de;
+  --accent: #0969da;
+  --ok: #1a7f37;
+  --err: #cf222e;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161b22;
+    --card: #1c2128;
+    --fg: #e6edf3;
+    --muted: #9198a1;
+    --border: #444c56;
+    --accent: #4493f8;
+    --ok: #3fb950;
+    --err: #ff7b72;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+main { max-width: 680px; margin: 0 auto; padding: 24px 16px 48px; }
+h1 { font-size: 20px; margin: 0 0 16px; }
+h2 { font-size: 15px; margin: 0 0 10px; }
+section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.field { display: block; margin-bottom: 12px; }
+.field > span { display: block; font-weight: 500; margin-bottom: 4px; }
+.field small, .note { color: var(--muted); font-size: 12px; }
+input[type="password"], input[type="url"], select, textarea {
+  width: 100%;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--fg);
+  font: inherit;
+}
+textarea { font-family: ui-monospace, Consolas, monospace; font-size: 13px; resize: vertical; }
+.check { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; }
+.check input { margin-top: 4px; }
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+button {
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--fg);
+  font: inherit;
+  cursor: pointer;
+}
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+.actions { display: flex; gap: 12px; align-items: center; position: sticky; bottom: 0; padding: 12px 0; background: var(--bg); }
+.ok { color: var(--ok); }
+.err { color: var(--err); }
+a { color: var(--accent); }
+kbd, code { font-family: ui-monospace, Consolas, monospace; font-size: 12px; }

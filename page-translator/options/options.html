@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Настройки — Deep Page Translator</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Deep Page Translator — настройки</h1>
+
+      <section>
+        <h2>Перевод</h2>
+        <label class="field">
+          <span>Язык перевода</span>
+          <select id="targetLang"></select>
+        </label>
+        <label class="field">
+          <span>Провайдер</span>
+          <select id="provider"></select>
+        </label>
+        <div class="row">
+          <button id="check" type="button">Проверить провайдера</button>
+          <span id="checkResult" class="note"></span>
+        </div>
+        <p class="note">
+          Проверка встроенного переводчика Chrome возможна только с открытой вкладки — используйте её из popup.
+        </p>
+      </section>
+
+      <section>
+        <h2>Ключи и серверы</h2>
+        <label class="field">
+          <span>DeepL API-ключ</span>
+          <input id="deeplKey" type="password" autocomplete="off" spellcheck="false" placeholder="xxxxxxxx-xxxx-…:fx" />
+          <small>Ключ с окончанием <code>:fx</code> — бесплатный тариф (api-free.deepl.com).</small>
+        </label>
+        <label class="field">
+          <span>LibreTranslate: URL сервера</span>
+          <input id="libreUrl" type="url" spellcheck="false" placeholder="http://localhost:5000" />
+        </label>
+        <label class="field">
+          <span>LibreTranslate: API-ключ (если требуется)</span>
+          <input id="libreKey" type="password" autocomplete="off" spellcheck="false" />
+        </label>
+      </section>
+
+      <section>
+        <h2>Сайты</h2>
+        <label class="field">
+          <span>Автоматически переводить (по одному хосту в строке)</span>
+          <textarea id="autoSites" rows="5" spellcheck="false" placeholder="kaggle.com"></textarea>
+          <small>Домен покрывает поддомены: <code>kaggle.com</code> включает <code>www.kaggle.com</code>.</small>
+        </label>
+        <label class="field">
+          <span>Исключённые сайты</span>
+          <textarea id="excludedSites" rows="5" spellcheck="false" placeholder="ads.example.com"></textarea>
+          <small>На этих сайтах автоперевод не включается, а их iframe внутри других страниц не переводятся.</small>
+        </label>
+      </section>
+
+      <section>
+        <h2>Интерфейс</h2>
+        <label class="check">
+          <input id="showTooltip" type="checkbox" />
+          <span>Показывать оригинал при наведении на переведённый блок</span>
+        </label>
+        <p class="note">
+          Горячая клавиша по умолчанию — <kbd>Alt+T</kbd>. Изменить её можно на странице
+          <a href="#" id="shortcuts">chrome://extensions/shortcuts</a>.
+        </p>
+      </section>
+
+      <section>
+        <h2>Кеш переводов</h2>
+        <p id="cacheStats" class="note">…</p>
+        <button id="clearCache" type="button">Очистить кеш</button>
+      </section>
+
+      <div class="actions">
+        <button id="save" class="primary" type="button">Сохранить</button>
+        <span id="saved" class="note"></span>
+      </div>
+    </main>
+
+    <script src="../shared/constants.js"></script>
+    <script src="options.js"></script>
+  </body>
+</html>
