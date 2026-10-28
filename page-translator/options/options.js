@@ -17,8 +17,62 @@ async function load() {
   $('autoSites').value = s.autoSites.join('\n');
   $('excludedSites').value = s.excludedSites.join('\n');
   $('showTooltip').checked = s.showTooltip;
+  $('hotkey').value = s.hotkey;
   refreshCacheStats();
+
+  const cmd = (await chrome.commands.getAll()).find((c) => c.name === 'toggle-translation');
+  $('chromeShortcut').textContent = cmd?.shortcut || 'не задано';
 }
+
+// ---- Запись своего сочетания клавиш ----
+
+const HOTKEY_HINT = $('hotkeyHint').innerHTML;
+
+function hotkeyHint(text, kind) {
+  $('hotkeyHint').innerHTML = HOTKEY_HINT;
+  if (text) {
+    $('hotkeyHint').textContent = text;
+    $('hotkeyHint').className = kind;
+  } else {
+    $('hotkeyHint').className = '';
+  }
+}
+
+async function saveHotkey(combo) {
+  $('hotkey').value = combo;
+  await chrome.storage.local.set({ hotkey: combo });
+}
+
+$('hotkey').addEventListener('keydown', async (e) => {
+  if (e.key === 'Tab') return; // оставляем навигацию по форме
+  e.preventDefault();
+  if (e.key === 'Escape') return $('hotkey').blur();
+  const noMods = !e.ctrlKey && !e.altKey && !e.metaKey && !e.shiftKey;
+  if (noMods && (e.key === 'Backspace' || e.key === 'Delete')) {
+    await saveHotkey('');
+    return hotkeyHint('Сочетание убрано.', 'ok');
+  }
+  const combo = PT_hotkeyFromEvent(e);
+  if (!combo) return; // нажат только модификатор — ждём основную клавишу
+  if (!PT_hotkeyValid(combo)) {
+    return hotkeyHint(`«${combo}» не подходит: добавьте Ctrl, Alt или Meta, либо выберите F1–F12.`, 'err');
+  }
+  await saveHotkey(combo);
+  const chromeCombo = $('chromeShortcut').textContent;
+  hotkeyHint(
+    combo === chromeCombo
+      ? `Сохранено: ${combo}. Оно совпадает с сочетанием Chrome — достаточно одного из них.`
+      : `Сохранено: ${combo}. Обновите открытые вкладки, если расширение было установлено недавно.`,
+    'ok'
+  );
+});
+
+$('hotkey').addEventListener('blur', () => hotkeyHint(''));
+
+$('clearHotkey').addEventListener('click', async () => {
+  await saveHotkey('');
+  hotkeyHint('Сочетание убрано.', 'ok');
+});
 
 async function save() {
   const libreUrl = $('libreUrl').value.trim().replace(/\/+$/, '');

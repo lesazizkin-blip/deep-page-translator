@@ -66,9 +66,25 @@
           <input id="showTooltip" type="checkbox" />
           <span>Показывать оригинал при наведении на переведённый блок</span>
         </label>
+      </section>
+
+      <section>
+        <h2>Горячие клавиши</h2>
+        <div class="field">
+          <span>Своё сочетание для перевода страницы</span>
+          <div class="row">
+            <input id="hotkey" class="hotkey" type="text" readonly placeholder="Нажмите сюда, затем сочетание клавиш" />
+            <button id="clearHotkey" type="button">Убрать</button>
+          </div>
+          <small id="hotkeyHint">
+            Нужна клавиша Ctrl, Alt или Meta (например, <kbd>Ctrl+Shift+Y</kbd>) либо одна из <kbd>F1</kbd>–<kbd>F12</kbd>.
+            Работает в любой раскладке и внутри iframe. Сохраняется сразу.
+          </small>
+        </div>
         <p class="note">
-          Горячая клавиша по умолчанию — <kbd>Alt+T</kbd>. Изменить её можно на странице
-          <a href="#" id="shortcuts">chrome://extensions/shortcuts</a>.
+          Сочетание Chrome: <kbd id="chromeShortcut">…</kbd> — работает, даже когда фокус в адресной строке.
+          Изменить его можно на странице <a href="#" id="shortcuts">chrome://extensions/shortcuts</a>.
+          Некоторые сочетания (например, <kbd>Ctrl+T</kbd>) Chrome забирает себе — их выбрать не получится.
         </p>
       </section>
 

@@ -163,6 +163,12 @@ const handlers = {
     return true;
   },
 
+  // Своя горячая клавиша на странице (из любого фрейма).
+  async 'pt:toggle'(msg, sender) {
+    if (sender.tab?.id == null) return false;
+    return { active: await toggleTab(sender.tab.id) };
+  },
+
   // Повторить неудавшиеся блоки во всех фреймах (например, после загрузки модели).
   async 'pt:retryAll'(msg, sender) {
     const tabId = msg.tabId ?? sender.tab?.id;
@@ -207,12 +213,16 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
 // ---------- Горячая клавиша ----------
 
+async function toggleTab(tabId) {
+  const { active } = await getTabState(tabId);
+  await setTabActive(tabId, !active);
+  return !active;
+}
+
 chrome.commands.onCommand.addListener(async (command, tab) => {
   if (command !== 'toggle-translation') return;
   if (!tab) [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.id) return;
-  const state = await getTabState(tab.id);
-  await setTabActive(tab.id, !state.active);
+  if (tab?.id) await toggleTab(tab.id);
 });
 
 // ---------- Контекстное меню ----------

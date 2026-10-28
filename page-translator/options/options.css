@@ -50,6 +50,15 @@ input[type="password"], input[type="url"], select, textarea {
   color: var(--fg);
   font: inherit;
 }
+input.hotkey { flex: 1; min-width: 200px; cursor: pointer; font-family: ui-monospace, Consolas, monospace; }
+input.hotkey:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+input[type="text"] {
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--fg);
+}
 textarea { font-family: ui-monospace, Consolas, monospace; font-size: 13px; resize: vertical; }
 .check { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; }
 .check input { margin-top: 4px; }
@@ -65,7 +74,7 @@ button {
 }
 button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
 .actions { display: flex; gap: 12px; align-items: center; position: sticky; bottom: 0; padding: 12px 0; background: var(--bg); }
-.ok { color: var(--ok); }
-.err { color: var(--err); }
+.ok, .field small.ok { color: var(--ok); }
+.err, .field small.err { color: var(--err); }
 a { color: var(--accent); }
 kbd, code { font-family: ui-monospace, Consolas, monospace; font-size: 12px; }

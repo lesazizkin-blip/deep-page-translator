@@ -72,6 +72,13 @@ function setStatus(text, kind = '') {
     if (e.target.checked && !active) $('toggle').click();
   });
 
+  // ---- Подсказка с текущими сочетаниями клавиш ----
+  const cmd = (await chrome.commands.getAll()).find((c) => c.name === 'toggle-translation');
+  const combos = [...new Set([cmd?.shortcut, settings.hotkey].filter(Boolean))];
+  $('shortcutHint').textContent = combos.length
+    ? `${combos.join(' или ')} — переключить`
+    : 'Горячая клавиша — в настройках';
+
   $('openOptions').addEventListener('click', (e) => {
     e.preventDefault();
     chrome.runtime.openOptionsPage();

@@ -104,6 +104,29 @@
   document.addEventListener('pointerdown', hideTip, { capture: true, passive: true });
   window.addEventListener('scroll', hideTip, { capture: true, passive: true });
 
+  // ---------- Своя горячая клавиша ----------
+  // Слушаем во всех фреймах: фокус может быть внутри iframe (урок Kaggle),
+  // а сочетание Chrome (Alt+T) туда не всегда «долетает» без настройки.
+
+  const isEditable = (el) =>
+    el?.nodeType === Node.ELEMENT_NODE &&
+    (el.isContentEditable || /^(input|textarea|select)$/i.test(el.localName));
+
+  window.addEventListener(
+    'keydown',
+    (e) => {
+      if (!settings.hotkey || e.repeat || e.isComposing) return;
+      const combo = PT_hotkeyFromEvent(e);
+      if (combo !== settings.hotkey) return;
+      // В полях ввода срабатываем только на F-клавиши, чтобы не мешать набору (AltGr = Ctrl+Alt).
+      if (isEditable(e.composedPath()[0]) && !PT_isFunctionKey(combo)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      PT.send({ type: 'pt:toggle' });
+    },
+    true
+  );
+
   // ---------- Старт ----------
 
   if (init.active && !disabled) PT.engine.setActive(true);
