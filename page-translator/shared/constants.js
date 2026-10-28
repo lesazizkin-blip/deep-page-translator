@@ -12,7 +12,21 @@ globalThis.PT_DEFAULTS = Object.freeze({
   excludedSites: [], // хосты, где расширение ничего не делает
   showTooltip: true, // подсказка с оригиналом при наведении
   hotkey: '', // своё сочетание клавиш на странице, например "Ctrl+Shift+Y" или "F2"
+  protectedTerms: [], // свои слова, которые не переводить (без учёта регистра)
 });
+
+// Названия, которые переводчики любят «переводить»: pandas → «панды», Python → «Питон».
+// Регистр важен: «Python» — язык, «python» в обычном тексте тоже он, поэтому указаны оба.
+globalThis.PT_PROTECTED_TERMS = Object.freeze([
+  'Python', 'python', 'pandas', 'Pandas', 'NumPy', 'numpy', 'SciPy', 'scipy', 'scikit-learn', 'sklearn',
+  'matplotlib', 'Matplotlib', 'seaborn', 'Seaborn', 'Plotly', 'TensorFlow', 'PyTorch', 'Keras', 'JAX',
+  'XGBoost', 'LightGBM', 'CatBoost', 'Hugging Face', 'Jupyter', 'JupyterLab', 'Colab',
+  'Kaggle', 'GitHub', 'GitLab', 'Git', 'SQL', 'BigQuery', 'PostgreSQL', 'MySQL', 'SQLite', 'MongoDB',
+  'JavaScript', 'TypeScript', 'Node.js', 'Vue.js', 'Kotlin',
+  // Общеупотребительные слова (Go, Swift, Rust, React) сюда не включены: «Go to settings» должно переводиться.
+  'Docker', 'Kubernetes', 'Linux', 'Ubuntu', 'macOS', 'iOS', 'Android', 'Chrome', 'Firefox',
+  'GNU', 'GPL', 'MIT', 'Apache', 'OpenAI', 'ChatGPT', 'Claude', 'Anthropic', 'Gemini', 'LLaMA', 'Llama',
+]);
 
 globalThis.PT_PROVIDERS = Object.freeze([
   { id: 'google', name: 'Google Translate (без ключа)' },

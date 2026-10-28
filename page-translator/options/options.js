@@ -18,6 +18,7 @@ async function load() {
   $('excludedSites').value = s.excludedSites.join('\n');
   $('showTooltip').checked = s.showTooltip;
   $('hotkey').value = s.hotkey;
+  $('protectedTerms').value = s.protectedTerms.join('\n');
   refreshCacheStats();
 
   const cmd = (await chrome.commands.getAll()).find((c) => c.name === 'toggle-translation');
@@ -89,6 +90,8 @@ async function save() {
     autoSites: parseList($('autoSites').value),
     excludedSites: parseList($('excludedSites').value),
     showTooltip: $('showTooltip').checked,
+    // Фразы могут содержать пробелы, поэтому делим только по строкам.
+    protectedTerms: [...new Set($('protectedTerms').value.split('\n').map((s) => s.trim()).filter(Boolean))],
   });
   flash('Сохранено', 'ok');
   return true;

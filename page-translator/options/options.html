@@ -27,6 +27,15 @@
         <p class="note">
           Проверка встроенного переводчика Chrome возможна только с открытой вкладки — используйте её из popup.
         </p>
+        <label class="field">
+          <span>Не переводить (по одному слову или фразе в строке)</span>
+          <textarea id="protectedTerms" rows="4" spellcheck="false" placeholder="Feature Engineering&#10;DataFrame"></textarea>
+          <small>
+            Регистр не важен. Названия языков и библиотек (Python, pandas, NumPy, Kaggle, GitHub…) уже защищены
+            встроенным списком. Например, добавьте «Feature Engineering», чтобы термин остался по-английски,
+            а не превратился в «проектирование функций».
+          </small>
+        </label>
       </section>
 
       <section>

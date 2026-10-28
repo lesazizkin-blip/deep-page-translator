@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Deep Page Translator",
   "short_name": "DeepPT",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Переводит то, что пропускает встроенный переводчик Chrome: cross-origin iframe, Shadow DOM и динамический контент.",
   "minimum_chrome_version": "116",
   "icons": {

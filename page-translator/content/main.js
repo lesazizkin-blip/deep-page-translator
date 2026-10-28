@@ -12,6 +12,7 @@
   const isTopFrame = init.frameId === 0;
   const disabled = init.disabled; // хост фрейма в списке исключений
   PT.engine.setSettings(settings);
+  PT.markup.setProtectedTerms(settings.protectedTerms);
 
   // ---------- Сообщения ----------
 
@@ -61,9 +62,12 @@
   // ---------- Настройки (присылает background; storage content script'ам закрыт) ----------
 
   function applySettings(next) {
-    const needRetranslate = next.targetLang !== settings.targetLang || next.provider !== settings.provider;
+    const termsChanged = JSON.stringify(next.protectedTerms || []) !== JSON.stringify(settings.protectedTerms || []);
+    const needRetranslate =
+      termsChanged || next.targetLang !== settings.targetLang || next.provider !== settings.provider;
     settings = next;
     PT.engine.setSettings(settings);
+    if (termsChanged) PT.markup.setProtectedTerms(settings.protectedTerms);
     if (needRetranslate) PT.engine.reset();
   }
 

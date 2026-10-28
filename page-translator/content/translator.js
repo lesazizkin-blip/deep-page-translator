@@ -18,6 +18,11 @@ PT.engine = (() => {
   let observedRoots = new WeakSet();
   const originals = new WeakMap(); // элемент блока -> исходный текст (для подсказки)
 
+  // Атрибуты placeholder/title: переводятся после текста, отдельной очередью.
+  let attrQueue = new Set(); // элементы, ожидающие перевода атрибутов
+  let attrInfo = new WeakMap(); // элемент -> {имя атрибута: {orig, tr}}
+  const translatedAttrs = new Set(); // элементы с переведёнными атрибутами
+
   let inflight = 0;
   let inflightBlocks = 0;
   let doneBlocks = 0;
@@ -111,8 +116,62 @@ PT.engine = (() => {
       (text) => {
         if (!PT.markup.isTranslated(text)) enqueue(PT.dom.blockOf(text));
       },
-      observeRoot // новые shadow roots тоже наблюдаем на изменения
+      observeRoot, // новые shadow roots тоже наблюдаем на изменения
+      (el) => {
+        attrQueue.add(el);
+        schedulePump();
+      }
     );
+  }
+
+  // ---------- Атрибуты ----------
+
+  /** Исходное значение атрибута или null, если он уже переведён нами. */
+  function attrSource(el, name) {
+    const cur = el.getAttribute(name);
+    if (!cur || !PT.dom.HAS_LETTER.test(cur)) return null;
+    const info = attrInfo.get(el)?.[name];
+    return info && cur === info.tr ? null : cur;
+  }
+
+  async function runAttrs(myGen) {
+    const items = [];
+    for (const el of attrQueue) {
+      attrQueue.delete(el);
+      if (!el.isConnected) continue;
+      for (const name of PT.dom.TEXT_ATTRS) {
+        const src = attrSource(el, name);
+        if (src) items.push({ el, name, src });
+      }
+      if (items.length >= 60) break;
+    }
+    if (!items.length) return;
+    const resp = await PT.send({ type: 'pt:translate', texts: items.map((i) => PT.markup.protect(i.src.trim())) });
+    if (myGen !== gen || !resp?.translations) return;
+    items.forEach((it, k) => {
+      if (it.el.getAttribute(it.name) !== it.src) return; // сайт уже поменял значение
+      const tr = PT.markup.tidy(PT.decodeHtml(resp.translations[k]));
+      const info = attrInfo.get(it.el) || {};
+      info[it.name] = { orig: it.src, tr };
+      attrInfo.set(it.el, info);
+      translatedAttrs.add(it.el);
+      it.el.setAttribute(it.name, tr);
+    });
+  }
+
+  /** Переключает атрибуты между оригиналом и переводом. */
+  function swapAttrs(toTranslation) {
+    for (const el of translatedAttrs) {
+      const info = attrInfo.get(el);
+      if (!el.isConnected || !info) {
+        translatedAttrs.delete(el);
+        continue;
+      }
+      for (const [name, { orig, tr }] of Object.entries(info)) {
+        const [from, to] = toTranslation ? [orig, tr] : [tr, orig];
+        if (el.getAttribute(name) === from) el.setAttribute(name, to);
+      }
+    }
   }
 
   // ---------- Отправка пачек ----------
@@ -175,6 +234,16 @@ PT.engine = (() => {
         inflight--;
         inflightBlocks -= blocks.length;
         reportProgress();
+        pump();
+      });
+    }
+    // Атрибуты — когда текст уже разобран (они менее заметны).
+    if (inflight < MAX_INFLIGHT && !queued.size && attrQueue.size) {
+      inflight++;
+      const myGen = gen;
+      runAttrs(myGen).finally(() => {
+        if (myGen !== gen) return;
+        inflight--;
         pump();
       });
     }
@@ -266,6 +335,7 @@ PT.engine = (() => {
     doneBlocks = 0;
     lastError = null;
     reapply(); // до подключения MutationObserver, чтобы не ловить свои же изменения
+    swapAttrs(true);
     observeRoot(document);
     scan(document);
     // Повторные проходы ловят shadow roots, прикреплённые уже после загрузки.
@@ -286,11 +356,13 @@ PT.engine = (() => {
     visible = new Set();
     known = new WeakSet();
     failed = new Set();
+    attrQueue = new Set();
     pendingNodes.clear();
     inflight = 0;
     inflightBlocks = 0;
     lastError = null;
     restore();
+    swapAttrs(false);
     PT.ui.hideTooltip();
     reportProgress();
   }
@@ -306,6 +378,8 @@ PT.engine = (() => {
     if (wasActive) stop();
     PT.store.translated.clear();
     PT.store.nodeInfo = new WeakMap();
+    translatedAttrs.clear();
+    attrInfo = new WeakMap();
     if (wasActive) start();
   }
 
