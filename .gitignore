@@ -11,3 +11,6 @@ desktop.ini
 *.zip
 *.crx
 *.pem
+
+# Собранные релизы
+dist/
