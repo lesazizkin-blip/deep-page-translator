@@ -23,6 +23,12 @@ PT.engine = (() => {
   let attrInfo = new WeakMap(); // элемент -> {имя атрибута: {orig, tr}}
   const translatedAttrs = new Set(); // элементы с переведёнными атрибутами
 
+  // Сколько раз блок пришлось переводить заново, потому что сайт перерисовал его
+  // (React возвращает английский текст, тикает таймер). После нескольких раз сдаёмся,
+  // иначе расширение и сайт бесконечно «перетягивают» текст друг у друга.
+  const MAX_RETRANSLATIONS = 3;
+  let retranslations = new WeakMap();
+
   let inflight = 0;
   let inflightBlocks = 0;
   let doneBlocks = 0;
@@ -97,6 +103,8 @@ PT.engine = (() => {
         const zone = PT.dom.codeZoneOf(n, codeKinds());
         if (zone) enqueue(zone);
         else if (n.nodeType === Node.ELEMENT_NODE) scanCode(n);
+        // Живой редактор перерисовал строку — найти в ней комментарии для слоя поверх.
+        else if (codeKinds().comment) PT.editors.scan(n.parentElement);
         continue;
       }
       if (n.nodeType === Node.TEXT_NODE) {
@@ -143,7 +151,10 @@ PT.engine = (() => {
 
   /** Комментарии в коде и вывод программ: обычный обход их пропускает вместе с кодом. */
   function scanCode(root) {
-    for (const zone of PT.dom.findCodeZones(root, codeKinds())) enqueue(zone);
+    const kinds = codeKinds();
+    for (const zone of PT.dom.findCodeZones(root, kinds)) enqueue(zone);
+    // Комментарии в живых редакторах — слоем поверх, без правки их DOM.
+    if (kinds.comment) PT.editors.scan(root);
   }
 
   // ---------- Атрибуты ----------
@@ -223,6 +234,11 @@ PT.engine = (() => {
       if (!target.isConnected) return;
       const res = PT.markup.build(block, { plainOnly });
       if (!res) return;
+      if (originals.has(target)) {
+        const n = (retranslations.get(target) || 0) + 1;
+        retranslations.set(target, n);
+        if (n > MAX_RETRANSLATIONS) return;
+      }
       res.target = target;
       picked.push(res);
       chars += res.units.reduce((n, u) => n + u.htmls.reduce((m, h) => m + h.length, 0), 0);
@@ -285,6 +301,13 @@ PT.engine = (() => {
       return;
     }
 
+    // Короткие подписи (Disk, CPU, «Code ▾») запоминаем по высоте до перевода:
+    // если перевод не влез и подпись развалилась на несколько строк — вернём оригинал.
+    const guarded = blocks
+      .filter((b) => b.text.length <= 30 && b.target.nodeType === Node.ELEMENT_NODE)
+      .map((b) => ({ b, h: b.target.getBoundingClientRect().height }))
+      .filter((g) => g.h > 0);
+
     const fallback = [];
     let k = 0;
     for (const u of units) {
@@ -300,6 +323,10 @@ PT.engine = (() => {
         let j = 0;
         for (const u of fallback) PT.markup.apply(u, resp2.translations.slice(j, (j += u.htmls.length)));
       }
+    }
+
+    for (const { b, h } of guarded) {
+      if (b.target.getBoundingClientRect().height > h * 1.5 + 2) PT.markup.keepOriginal(b.units);
     }
 
     for (const b of blocks) originals.set(b.target, b.text);
@@ -358,6 +385,7 @@ PT.engine = (() => {
     lastError = null;
     reapply(); // до подключения MutationObserver, чтобы не ловить свои же изменения
     swapAttrs(true);
+    PT.editors.start();
     observeRoot(document);
     scan(document);
     // Повторные проходы ловят shadow roots, прикреплённые уже после загрузки.
@@ -368,6 +396,7 @@ PT.engine = (() => {
   function stop() {
     active = false;
     gen++;
+    PT.editors.stop();
     mo.disconnect();
     io.disconnect();
     rescanTimers.forEach(clearTimeout);
@@ -402,6 +431,8 @@ PT.engine = (() => {
     PT.store.nodeInfo = new WeakMap();
     translatedAttrs.clear();
     attrInfo = new WeakMap();
+    retranslations = new WeakMap();
+    PT.editors.reset();
     if (wasActive) start();
   }
 

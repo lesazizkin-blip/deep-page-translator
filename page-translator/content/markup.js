@@ -260,7 +260,8 @@ PT.markup = (() => {
       .map((s) => ({ ...s, src: s.placeholder ?? sourceOf(s.node) }))
       .filter((s) => /\S/.test(s.src));
     // Сегмент целиком из защищённого слова («pandas») ведёт себя как <code>: контекст, но не перевод.
-    for (const s of segs) if (!s.fixed && isFullyProtected(s.src)) s.fixed = true;
+    // Аббревиатура целиком (RAM, CPU, GPU, MAE) тоже: иначе RAM превращается в «БАРАН».
+    for (const s of segs) if (!s.fixed && (isFullyProtected(s.src) || /^[A-Z][A-Z0-9]{1,5}$/.test(s.src.trim()))) s.fixed = true;
     const translatable = segs.filter((s) => !s.fixed && HAS_LETTER.test(s.src));
     if (!translatable.length || translatable.every((s) => isTranslated(s.node))) return null;
 
@@ -412,6 +413,15 @@ PT.markup = (() => {
 
     const texts = applyByGaps(runs, segs, styled, unit.block) || applyByIds(runs, isFixed);
     if (!texts || needText.some((i) => texts.get(i) === undefined)) return false;
+    // Google иногда выносит текст неизменяемого куска из его тега и приклеивает к соседнему
+    // слову: «Code [arrow_drop_down]» → «Кодarrow_drop_down». Такой текст убираем.
+    const fixedTexts = segs.filter((s) => s.fixed && s.src.trim().length >= 3).map((s) => s.src.trim());
+    for (const [i, t] of texts) {
+      if (isFixed(i)) continue;
+      let v = t;
+      for (const f of fixedTexts) if (v.includes(f) && !segs[i].src.includes(f)) v = v.split(f).join(' ');
+      if (v !== t) texts.set(i, v);
+    }
     // Числа не должны теряться: Google иногда «съедает» их рядом с разметкой
     // («1 of 6 [иконка]» → «1 из [иконка]»). Тогда переводим узлы по одному.
     const digits = (list) => list.flatMap((t) => t.match(/\d+/g) || []).sort().join(',');
@@ -508,10 +518,27 @@ PT.markup = (() => {
     return texts;
   }
 
+  /**
+   * Оставить оригинал: перевод не влез в вёрстку. Узел помечаем как «обработанный»
+   * (tr = orig), чтобы он не попадал в очередь снова.
+   */
+  function keepOriginal(units) {
+    for (const u of units) {
+      for (const seg of u.segs) {
+        if (seg.fixed || seg.placeholder || !seg.node.isConnected) continue;
+        if (seg.node.data !== seg.src) seg.node.data = seg.src;
+        PT.store.nodeInfo.set(seg.node, { orig: seg.src, tr: seg.src });
+      }
+    }
+  }
+
   /** Запасной вариант: каждый узел единицы отдельной plain-единицей. */
   function splitToPlain(unit) {
     return unit.segs.filter((s) => !s.fixed && HAS_LETTER.test(s.src)).map((s) => plainUnit(unit.block, s));
   }
 
-  return { build, apply, splitToPlain, sourceOf, isTranslated, protect, setProtectedTerms, tidy };
+  return {
+    build, apply, splitToPlain, keepOriginal, sourceOf, isTranslated, protect, protectCode, setProtectedTerms,
+    tidy, looksLikeProse,
+  };
 })();

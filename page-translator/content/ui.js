@@ -81,6 +81,17 @@ PT.ui = (() => {
     (document.documentElement || document).appendChild(host);
   }
 
+  /** Слой для переводов поверх редакторов кода (см. editors.js). */
+  function overlayLayer() {
+    ensure();
+    if (!els.layer || !els.layer.isConnected) {
+      els.layer = document.createElement('div');
+      els.layer.className = 'layer';
+      root.prepend(els.layer); // первым — рисуется под индикатором и подсказками
+    }
+    return els.layer;
+  }
+
   function showPill({ text, percent = null, error = false, action = null }) {
     ensure();
     clearTimeout(hideTimer);
@@ -114,17 +125,32 @@ PT.ui = (() => {
       return;
     }
     const total = pending + done;
-    if (!pending) {
-      if (total) {
-        showPill({ text: 'Перевод готов', percent: 100 });
-        hidePill(1200);
-      } else {
-        hidePill();
-      }
+    if (!total) {
+      // Перевод выключен — следующий запуск снова покажет индикатор.
+      settled = false;
+      burst = false;
+      hidePill();
       return;
     }
+    if (!pending) {
+      if (!settled || burst) {
+        showPill({ text: 'Перевод готов', percent: 100 });
+        hidePill(1200);
+      }
+      settled = true;
+      burst = false;
+      return;
+    }
+    // После первого прохода живые сайты (редактор Kaggle, SPA) постоянно что-то
+    // дорисовывают: мелкие догрузки переводим молча, индикатор — только для крупных.
+    if (settled && !burst && pending < BURST_MIN) return;
+    if (settled) burst = true;
     showPill({ text: `Перевод… ${done} из ${total}`, percent: Math.round((done / total) * 100) });
   }
+
+  const BURST_MIN = 20;
+  let settled = false; // первый проход завершён
+  let burst = false; // сейчас показываем крупную догрузку
 
   function showError(message) {
     showPill({
@@ -198,5 +224,8 @@ PT.ui = (() => {
     el.style.top = `${top}px`;
   }
 
-  return { showProgress, showError, showStatus, showModelPrompt, showTooltip, hideTooltip, showSelection, hidePill };
+  return {
+    showProgress, showError, showStatus, showModelPrompt, showTooltip, hideTooltip, showSelection, hidePill,
+    overlayLayer,
+  };
 })();

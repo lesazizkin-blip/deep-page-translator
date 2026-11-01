@@ -71,9 +71,20 @@ PT.dom = (() => {
     return el?.nodeType === Node.ELEMENT_NODE && el.localName === 'pre' && !isCodePre(el);
   }
 
+  /**
+   * Иконка-лигатура: шрифт Material/Google Symbols рисует слово «arrow_drop_down» как значок.
+   * Если такое слово перевести, вместо значка появится текст («Кодarrow_drop_down»).
+   */
+  function isIconLigature(el) {
+    if (el.childElementCount) return false;
+    const cls = el.getAttribute('class') || '';
+    if (!/icon|symbol/i.test(cls) && el.getAttribute('aria-hidden') !== 'true' && el.localName !== 'mat-icon') return false;
+    return /^[a-z][a-z0-9_]{2,}$/.test(el.textContent.trim());
+  }
+
   function isSkipped(el) {
     if (el.localName === 'pre') return isCodePre(el) || el.matches(SKIP_SELECTOR);
-    return SKIP_TAGS.has(el.localName) || el.matches(SKIP_SELECTOR);
+    return SKIP_TAGS.has(el.localName) || el.matches(SKIP_SELECTOR) || isIconLigature(el);
   }
 
   // «Отдельные пункты»: вкладки, кнопки, теги-ссылки, пункты меню. Если в блоке
@@ -197,6 +208,7 @@ PT.dom = (() => {
 
   /** Текст-заменитель для пропускаемого inline-элемента внутри предложения (или null). */
   function placeholderText(el) {
+    if (isIconLigature(el)) return el.textContent.trim();
     if (!(isInline(el) || el.localName === 'mjx-container' || el.localName === 'math')) return null;
     if (!el.matches(PLACEHOLDER_SELECTOR)) return null;
     // У KaTeX textContent дублирует формулу (MathML + HTML) — берём исходный TeX.
