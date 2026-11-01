@@ -20,10 +20,17 @@ PT.dom = (() => {
     // KaTeX / MathJax
     '.katex', '.katex-display', '.katex-mathml', 'mjx-container', '.MathJax',
     '.MathJax_Display', '.MathJax_Preview', '.MathJax_SVG', '.MJX_Assistive_MathML',
-    // Jupyter (JupyterLab/nbconvert и классический Notebook): код и вывод
-    '.jp-CodeCell .jp-Cell-inputWrapper', '.jp-InputPrompt', '.jp-OutputPrompt',
-    '.jp-OutputArea', '.jp-Cell-outputWrapper',
-    '.code_cell .input', '.cell .input_area', '.cell .output_wrapper', '.cell .prompt',
+    // Jupyter (JupyterLab/nbconvert и классический Notebook): код и «технический» вывод —
+    // текст программы, stdout/stderr, ошибки, таблицы pandas. HTML/Markdown-вывод
+    // (подсказки learntools на Kaggle, пояснения) не пропускаем — это обычный текст.
+    '.jp-CodeCell .jp-Cell-inputWrapper', '.jp-InputPrompt', '.jp-OutputPrompt', '.jp-OutputArea-prompt',
+    '.jp-OutputArea-output[data-mime-type="text/plain"]',
+    '.jp-OutputArea-output[data-mime-type="application/vnd.jupyter.stdout"]',
+    '.jp-OutputArea-output[data-mime-type="application/vnd.jupyter.stderr"]',
+    '.jp-RenderedText', '.jp-RenderedJavaScript',
+    '.code_cell .input', '.cell .input_area', '.cell .prompt',
+    '.cell .output_text', '.cell .output_stream', '.cell .output_stderr', '.cell .output_error',
+    '.cell .output_javascript', 'table.dataframe',
     // Редакторы кода
     '.CodeMirror', '.cm-editor', '.monaco-editor',
   ].join(',');
