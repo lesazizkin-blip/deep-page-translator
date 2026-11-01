@@ -75,6 +75,69 @@ PT.markup = (() => {
     return wholeRes.some((re) => re.test(t));
   }
 
+  // ---------- Комментарии в коде и вывод программ ----------
+
+  // Идентификаторы внутри комментария: X_train, df.head(), camelCase, fit().
+  const IDENT_RE = /(?<![\p{L}\p{N}_])(?:[A-Za-z_]\w*(?:[._]\w+)+(?:\(\))?|[a-z]+[A-Z]\w*|\w+\(\))(?![\p{L}\p{N}_])/gu;
+
+  /** protect() + идентификаторы из кода тоже не переводим. */
+  function protectCode(text) {
+    return protect(text).replace(/(<span class="notranslate">.*?<\/span>)|([^<]+)/g, (m, wrapped, plain) =>
+      wrapped ? wrapped : plain.replace(IDENT_RE, (t) => `<span class="notranslate">${t}</span>`)
+    );
+  }
+
+  /**
+   * Похожа ли строка на обычный текст, а не на код или данные.
+   * Закомментированный код («# model.fit(X, y)») и таблицы pandas
+   * («Car       49», «dtype: int64») переводить нельзя.
+   */
+  function looksLikeProse(text, kind) {
+    const letters = (text.match(/\p{L}/gu) || []).length;
+    if (letters < 3) return false;
+    const symbols = (text.match(/[=(){}[\];<>$\\|&^~`@]/g) || []).length;
+    const codeish = (text.match(/\w[._]\w|\w\(/g) || []).length; // x.y, x_y, f(
+    if ((symbols + codeish) / letters > 0.2) return false;
+    const words = text.match(/\p{Ll}{2,}/gu) || [];
+    if (kind === 'output') {
+      if (/\S {2,}\S/.test(text)) return false; // выровненные колонки — таблица
+      if (text.trim().split(/\s+/).length < 3 || words.length < 2) return false;
+    } else if (!words.length) {
+      return false;
+    }
+    return true;
+  }
+
+  // Комментарий: маркер в начале (#, //, /*, *, --, <!--, ;, %), текст, маркер в конце (*/, -->).
+  const COMMENT_LINE_RE = /^(\s*(?:#+:?|\/\/+!?|\/\*+!?|\*+(?!\/)|--|<!--|;+|%+)?\s*)(.*?)(\s*(?:\*+\/|-->)?\s*)$/;
+
+  function splitLine(line, kind) {
+    const m = kind === 'comment' ? line.match(COMMENT_LINE_RE) : line.match(/^(\s*)(.*?)(\s*)$/);
+    if (!m || !looksLikeProse(m[2], kind)) return null;
+    return { prefix: m[1], core: m[2], suffix: m[3] };
+  }
+
+  /**
+   * Единица для зоны кода: текст всех узлов зоны построчно; переводим только
+   * «текстовую» часть строк, маркеры комментария и отступы оставляем.
+   */
+  function buildCode(zone, kind) {
+    const segs = PT.dom.textNodesOf(zone).map((node) => ({ node, src: sourceOf(node), fixed: false }));
+    if (!segs.length || segs.every((s) => isTranslated(s.node) || !s.src)) return null;
+    const lines = segs.map((s) => s.src).join('').split('\n');
+    const items = [];
+    lines.forEach((line, index) => {
+      const part = splitLine(line, kind);
+      if (part) items.push({ index, ...part });
+    });
+    if (!items.length) return null;
+    const text = lines.join('\n').trim();
+    return {
+      units: [{ kind: 'code', block: zone, segs, lines, items, htmls: items.map((it) => protectCode(it.core)) }],
+      text: text.length > 2000 ? text.slice(0, 2000) + '…' : text,
+    };
+  }
+
   /** Делит очень длинный текст по предложениям на куски не длиннее limit. */
   function splitLong(text, limit = MAX_UNIT_CHARS) {
     if (text.length <= limit) return [text];
@@ -189,6 +252,9 @@ PT.markup = (() => {
    * Возвращает {units, text} или null, если переводить нечего.
    */
   function build(block, { plainOnly = false } = {}) {
+    const zone = PT.dom.codeZoneKind(block);
+    if (zone) return buildCode(block, zone);
+
     const segs = PT.dom
       .segmentsOf(block)
       .map((s) => ({ ...s, src: s.placeholder ?? sourceOf(s.node) }))
@@ -309,6 +375,17 @@ PT.markup = (() => {
         parts[p.index] = p.before + body + p.after;
       });
       writeNode(unit.segs[0], parts.join(''));
+      return true;
+    }
+
+    if (unit.kind === 'code') {
+      const lines = unit.lines.slice();
+      unit.items.forEach((it, k) => {
+        lines[it.index] = it.prefix + tidy(PT.decodeHtml(outs[k])) + it.suffix;
+      });
+      // Обычно в зоне один текстовый узел. Если узлов несколько (на GitHub «#» в отдельном span),
+      // весь текст кладём в первый, остальные очищаем — цвет у них одинаковый.
+      unit.segs.forEach((seg, i) => writeNode(seg, i === 0 ? lines.join('\n') : ''));
       return true;
     }
 

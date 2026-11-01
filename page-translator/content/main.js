@@ -64,7 +64,11 @@
   function applySettings(next) {
     const termsChanged = JSON.stringify(next.protectedTerms || []) !== JSON.stringify(settings.protectedTerms || []);
     const needRetranslate =
-      termsChanged || next.targetLang !== settings.targetLang || next.provider !== settings.provider;
+      termsChanged ||
+      next.targetLang !== settings.targetLang ||
+      next.provider !== settings.provider ||
+      next.translateComments !== settings.translateComments ||
+      next.translateOutput !== settings.translateOutput;
     settings = next;
     PT.engine.setSettings(settings);
     if (termsChanged) PT.markup.setProtectedTerms(settings.protectedTerms);

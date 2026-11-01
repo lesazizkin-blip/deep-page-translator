@@ -78,6 +78,22 @@
       </section>
 
       <section>
+        <h2>Код и ноутбуки</h2>
+        <label class="check">
+          <input id="translateComments" type="checkbox" />
+          <span>Переводить комментарии в коде (<code># …</code>, <code>// …</code>)</span>
+        </label>
+        <label class="check">
+          <input id="translateOutput" type="checkbox" />
+          <span>Переводить текстовый вывод ячеек Jupyter/Kaggle (результат <code>print</code>)</span>
+        </label>
+        <p class="note">
+          Сам код, строки в кавычках, закомментированный код и таблицы с данными не переводятся.
+          Редакторы кода (когда ноутбук открыт на редактирование) не трогаются.
+        </p>
+      </section>
+
+      <section>
         <h2>Горячие клавиши</h2>
         <div class="field">
           <span>Своё сочетание для перевода страницы</span>

@@ -243,8 +243,59 @@ PT.dom = (() => {
     return segs;
   }
 
+  // ---------- Комментарии в коде и текстовый вывод программ ----------
+  // Код целиком пропускается, но внутри него есть две «зоны» с обычным текстом:
+  // комментарии (подсветка синтаксиса размечает их отдельными span) и вывод print().
+
+  const COMMENT_SELECTOR = [
+    '.highlight .c', '.highlight .c1', '.highlight .cm', '.highlight .cs', // Pygments (Jupyter, Kaggle, Sphinx)
+    '.hljs-comment', // highlight.js
+    '.token.comment', // Prism
+    '.pl-c', // GitHub
+  ].join(',');
+  const OUTPUT_SELECTOR = [
+    '.output_stdout > pre', // Jupyter classic / nbconvert (Kaggle)
+    '.jp-OutputArea-output[data-mime-type="application/vnd.jupyter.stdout"] > pre', // JupyterLab
+  ].join(',');
+  // Живые редакторы трогать нельзя: правка их DOM превратится в правку самого кода.
+  const LIVE_EDITOR = '.CodeMirror, .cm-editor, .monaco-editor, [contenteditable=""], [contenteditable="true"], [contenteditable="plaintext-only"], [data-pt-ui]';
+
+  /** 'comment' | 'output' | null. Для вложенных комментариев (GitHub) зона — внешний. */
+  function codeZoneKind(el) {
+    if (el.nodeType !== Node.ELEMENT_NODE || el.closest(LIVE_EDITOR)) return null;
+    if (el.matches(COMMENT_SELECTOR) && !el.parentElement?.closest(COMMENT_SELECTOR)) return 'comment';
+    if (el.matches(OUTPUT_SELECTOR)) return 'output';
+    return null;
+  }
+
+  /** Все зоны внутри root (и сам root, если он зона). kinds: {comment: bool, output: bool}. */
+  function findCodeZones(root, kinds) {
+    const sel = [kinds.comment && COMMENT_SELECTOR, kinds.output && OUTPUT_SELECTOR].filter(Boolean).join(',');
+    if (!sel || !root.querySelectorAll) return [];
+    const list = root.nodeType === Node.ELEMENT_NODE && root.matches(sel) ? [root] : [];
+    list.push(...root.querySelectorAll(sel));
+    return list.filter((el) => kinds[codeZoneKind(el)]);
+  }
+
+  /** Зона, в которой лежит узел (для текста, изменённого уже после перевода). */
+  function codeZoneOf(node, kinds) {
+    let el = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+    let zone = null;
+    for (; el; el = el.parentElement) if (kinds[codeZoneKind(el)]) zone = el;
+    return zone;
+  }
+
+  function textNodesOf(el) {
+    const out = [];
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    let n;
+    while ((n = walker.nextNode())) out.push(n);
+    return out;
+  }
+
   return {
     isSkipped, isInsideSkipped, isProsePre, isItem, topChildOf, blockOf, targetOf, walk, segmentsOf,
+    codeZoneKind, findCodeZones, codeZoneOf, textNodesOf,
     HAS_LETTER, TEXT_ATTRS,
   };
 })();

@@ -90,7 +90,15 @@ PT.engine = (() => {
     pendingNodes.clear();
     if (!active) return;
     for (const n of nodes) {
-      if (!n.isConnected || PT.dom.isInsideSkipped(n)) continue;
+      if (!n.isConnected) continue;
+      if (PT.dom.isInsideSkipped(n)) {
+        // Внутри кода переводим только комментарии и вывод (если включено в настройках).
+        if (n.nodeType === Node.TEXT_NODE && PT.markup.isTranslated(n)) continue;
+        const zone = PT.dom.codeZoneOf(n, codeKinds());
+        if (zone) enqueue(zone);
+        else if (n.nodeType === Node.ELEMENT_NODE) scanCode(n);
+        continue;
+      }
       if (n.nodeType === Node.TEXT_NODE) {
         if (PT.dom.HAS_LETTER.test(n.data) && !PT.markup.isTranslated(n)) enqueue(PT.dom.blockOf(n));
       } else {
@@ -116,12 +124,26 @@ PT.engine = (() => {
       (text) => {
         if (!PT.markup.isTranslated(text)) enqueue(PT.dom.blockOf(text));
       },
-      observeRoot, // новые shadow roots тоже наблюдаем на изменения
+      (shadowRoot) => {
+        observeRoot(shadowRoot); // новые shadow roots тоже наблюдаем на изменения
+        scanCode(shadowRoot);
+      },
       (el) => {
         attrQueue.add(el);
         schedulePump();
       }
     );
+    scanCode(root);
+  }
+
+  /** Какие зоны кода переводить — по настройкам. */
+  function codeKinds() {
+    return { comment: settings.translateComments !== false, output: settings.translateOutput !== false };
+  }
+
+  /** Комментарии в коде и вывод программ: обычный обход их пропускает вместе с кодом. */
+  function scanCode(root) {
+    for (const zone of PT.dom.findCodeZones(root, codeKinds())) enqueue(zone);
   }
 
   // ---------- Атрибуты ----------

@@ -13,6 +13,8 @@ globalThis.PT_DEFAULTS = Object.freeze({
   showTooltip: true, // подсказка с оригиналом при наведении
   hotkey: '', // своё сочетание клавиш на странице, например "Ctrl+Shift+Y" или "F2"
   protectedTerms: [], // свои слова, которые не переводить (без учёта регистра)
+  translateComments: true, // комментарии в коде (# …, // …)
+  translateOutput: true, // текстовый вывод ячеек Jupyter (print)
 });
 
 // Названия, которые переводчики любят «переводить»: pandas → «панды», Python → «Питон».
