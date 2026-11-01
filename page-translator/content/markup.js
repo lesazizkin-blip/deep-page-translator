@@ -111,9 +111,15 @@ PT.markup = (() => {
   // Комментарий: маркер в начале (#, //, /*, *, --, <!--, ;, %), текст, маркер в конце (*/, -->).
   const COMMENT_LINE_RE = /^(\s*(?:#+:?|\/\/+!?|\/\*+!?|\*+(?!\/)|--|<!--|;+|%+)?\s*)(.*?)(\s*(?:\*+\/|-->)?\s*)$/;
 
+  // Строка блока кода без подсветки, которая сама является комментарием (не #include и т.п.).
+  const COMMENT_ONLY_LINE = /^\s*(\/\/|#(?!\s*(include|define|undef|if|ifdef|ifndef|elif|else|endif|pragma|error|import)\b))/;
+
   function splitLine(line, kind) {
-    const m = kind === 'comment' ? line.match(COMMENT_LINE_RE) : line.match(/^(\s*)(.*?)(\s*)$/);
-    if (!m || !looksLikeProse(m[2], kind)) return null;
+    // commentLines: в блоке без подсветки переводим только строки-комментарии, код не трогаем.
+    if (kind === 'commentLines' && !COMMENT_ONLY_LINE.test(line)) return null;
+    const isComment = kind === 'comment' || kind === 'commentLines';
+    const m = isComment ? line.match(COMMENT_LINE_RE) : line.match(/^(\s*)(.*?)(\s*)$/);
+    if (!m || !looksLikeProse(m[2], isComment ? 'comment' : kind)) return null;
     return { prefix: m[1], core: m[2], suffix: m[3] };
   }
 

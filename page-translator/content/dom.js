@@ -271,6 +271,7 @@ PT.dom = (() => {
     '.hljs-comment', // highlight.js
     '.token.comment', // Prism
     '.pl-c', // GitHub
+    '.cm-comment', '.tok-comment', // CodeMirror в статичных блоках (Markdown в JupyterLab/Kaggle); живые редакторы исключены ниже
   ].join(',');
   const OUTPUT_SELECTOR = [
     '.output_stdout > pre', // Jupyter classic / nbconvert (Kaggle)
@@ -278,29 +279,69 @@ PT.dom = (() => {
   ].join(',');
   // Живые редакторы трогать нельзя: правка их DOM превратится в правку самого кода.
   const LIVE_EDITOR = '.CodeMirror, .cm-editor, .monaco-editor, [contenteditable=""], [contenteditable="true"], [contenteditable="plaintext-only"], [data-pt-ui]';
+  // Начало комментария, но не директива препроцессора C/C++ (#include, #define…).
+  const COMMENT_START = /^\s*(\/\/|#(?!\s*(include|define|undef|if|ifdef|ifndef|elif|else|endif|pragma|error|import)\b))/;
 
-  /** 'comment' | 'output' | null. Для вложенных комментариев (GitHub) зона — внешний. */
+  /**
+   * Комментарий без знакомого класса: подсветка с «хэшированными» классами (ͼ1m и т.п.).
+   * Листовой span внутри <pre>, начинающийся с # или //.
+   */
+  function isLooseCommentSpan(el) {
+    return (
+      el.localName === 'span' &&
+      !el.childElementCount &&
+      COMMENT_START.test(el.textContent) &&
+      Boolean(el.closest('pre')) &&
+      !el.parentElement?.closest(COMMENT_SELECTOR)
+    );
+  }
+
+  /** Блок кода без подсветки (один текстовый узел), в котором есть строки-комментарии. */
+  function isPlainCodeBlock(el) {
+    return (
+      el.localName === 'code' &&
+      el.parentElement?.localName === 'pre' &&
+      el.childNodes.length === 1 &&
+      el.firstChild.nodeType === Node.TEXT_NODE &&
+      /(^|\n)\s*(#|\/\/)/.test(el.firstChild.data)
+    );
+  }
+
+  /**
+   * 'comment' — элемент-комментарий; 'commentLines' — блок кода без подсветки,
+   * где переводятся только строки-комментарии; 'output' — вывод программы; null.
+   * Для вложенных комментариев (GitHub) зона — внешний.
+   */
   function codeZoneKind(el) {
     if (el.nodeType !== Node.ELEMENT_NODE || el.closest(LIVE_EDITOR)) return null;
     if (el.matches(COMMENT_SELECTOR) && !el.parentElement?.closest(COMMENT_SELECTOR)) return 'comment';
+    if (isLooseCommentSpan(el)) return 'comment';
     if (el.matches(OUTPUT_SELECTOR)) return 'output';
+    if (isPlainCodeBlock(el)) return 'commentLines';
     return null;
+  }
+
+  /** Включён ли такой вид зоны в настройках. */
+  function zoneEnabled(kind, kinds) {
+    return Boolean(kind) && Boolean(kinds[kind === 'commentLines' ? 'comment' : kind]);
   }
 
   /** Все зоны внутри root (и сам root, если он зона). kinds: {comment: bool, output: bool}. */
   function findCodeZones(root, kinds) {
-    const sel = [kinds.comment && COMMENT_SELECTOR, kinds.output && OUTPUT_SELECTOR].filter(Boolean).join(',');
+    const sel = [kinds.comment && `${COMMENT_SELECTOR}, pre span, pre > code`, kinds.output && OUTPUT_SELECTOR]
+      .filter(Boolean)
+      .join(',');
     if (!sel || !root.querySelectorAll) return [];
     const list = root.nodeType === Node.ELEMENT_NODE && root.matches(sel) ? [root] : [];
     list.push(...root.querySelectorAll(sel));
-    return list.filter((el) => kinds[codeZoneKind(el)]);
+    return list.filter((el) => zoneEnabled(codeZoneKind(el), kinds));
   }
 
   /** Зона, в которой лежит узел (для текста, изменённого уже после перевода). */
   function codeZoneOf(node, kinds) {
     let el = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
     let zone = null;
-    for (; el; el = el.parentElement) if (kinds[codeZoneKind(el)]) zone = el;
+    for (; el; el = el.parentElement) if (zoneEnabled(codeZoneKind(el), kinds)) zone = el;
     return zone;
   }
 
