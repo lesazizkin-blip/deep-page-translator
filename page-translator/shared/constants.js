@@ -30,9 +30,12 @@ globalThis.PT_PROTECTED_TERMS = Object.freeze([
   'GNU', 'GPL', 'MIT', 'Apache', 'OpenAI', 'ChatGPT', 'Claude', 'Anthropic', 'Gemini', 'LLaMA', 'Llama',
 ]);
 
+globalThis.PT_IS_FIREFOX = typeof navigator !== 'undefined' && /Firefox\//.test(navigator.userAgent);
+
 globalThis.PT_PROVIDERS = Object.freeze([
   { id: 'google', name: 'Google Translate (без ключа)' },
-  { id: 'builtin', name: 'Встроенный в Chrome (on-device, 138+)' },
+  // Translator API есть только в Chrome 138+ на компьютере.
+  ...(PT_IS_FIREFOX ? [] : [{ id: 'builtin', name: 'Встроенный в Chrome (on-device, 138+)' }]),
   { id: 'deepl', name: 'DeepL API (нужен ключ)' },
   { id: 'libre', name: 'LibreTranslate (свой сервер)' },
 ]);

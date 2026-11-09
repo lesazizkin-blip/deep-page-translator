@@ -1,0 +1,8 @@
+{
+  "name": "deep-page-translator",
+  "private": true,
+  "description": "Только для запуска тестов; само расширение собирается без npm.",
+  "scripts": {
+    "test": "node --test \"tests/*.test.mjs\" && python -m unittest discover -s tests -p \"test_*.py\""
+  }
+}

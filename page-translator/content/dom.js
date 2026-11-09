@@ -130,7 +130,7 @@ PT.dom = (() => {
     if (el.shadowRoot) return el.shadowRoot;
     if (el.hasAttribute('data-pt-ui')) return null;
     try {
-      return chrome.dom?.openOrClosedShadowRoot?.(el) || null;
+      return chrome.dom?.openOrClosedShadowRoot?.(el) || el.openOrClosedShadowRoot || null;
     } catch {
       return null;
     }

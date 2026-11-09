@@ -1,3 +1,16 @@
+# Автотесты
+
+Без зависимостей: нужны Node 22+ и Python 3.
+
+```bash
+npm test
+```
+
+Запускает `node --test "tests/*.test.mjs"` (константы и горячие клавиши, кеш, очередь, провайдер Google,
+фоновый скрипт с имитацией `chrome.*` — в том числе без `commands`/`contextMenus`, как в Firefox для Android)
+и `python -m unittest` (манифест и пакет `.xpi` для Firefox). Код content scripts требует DOM и проверяется
+вручную по списку ниже.
+
 # Ручные проверки
 
 Перед проверками: загрузите расширение (см. README), откройте `chrome://extensions` →

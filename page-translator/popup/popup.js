@@ -30,7 +30,7 @@ function setStatus(text, kind = '') {
   }
 
   if (!host) {
-    setStatus('На этой странице расширения работать не могут (служебная страница Chrome или магазин).', 'err');
+    setStatus('На этой странице расширения работать не могут (служебная страница браузера или магазин расширений).', 'err');
     $('auto').disabled = true;
   } else {
     $('host').textContent = host;
@@ -73,11 +73,13 @@ function setStatus(text, kind = '') {
   });
 
   // ---- Подсказка с текущими сочетаниями клавиш ----
-  const cmd = (await chrome.commands.getAll()).find((c) => c.name === 'toggle-translation');
+  const cmd = ((await chrome.commands?.getAll()) || []).find((c) => c.name === 'toggle-translation');
   const combos = [...new Set([cmd?.shortcut, settings.hotkey].filter(Boolean))];
-  $('shortcutHint').textContent = combos.length
-    ? `${combos.join(' или ')} — переключить`
-    : 'Горячая клавиша — в настройках';
+  $('shortcutHint').textContent = !chrome.commands
+    ? '' // на телефоне горячих клавиш нет
+    : combos.length
+      ? `${combos.join(' или ')} — переключить`
+      : 'Горячая клавиша — в настройках';
 
   $('openOptions').addEventListener('click', (e) => {
     e.preventDefault();

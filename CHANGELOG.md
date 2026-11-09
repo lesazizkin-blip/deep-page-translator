@@ -1,5 +1,19 @@
 # История изменений
 
+## v1.5.0 — 2026-11-09
+
+### Новое
+- **Сборка для Firefox, в том числе Firefox для Android** (Samsung Galaxy S25 и другие телефоны):
+  `python tools/build_firefox.py` создаёт `dist/deep-page-translator-firefox-vX.Y.Z.xpi`.
+  Код общий с Chrome-версией, отличается только `manifest.json`.
+- Popup и настройки под телефон: на всю ширину экрана, крупные кнопки и поля.
+
+### Изменено
+- Без `commands` и `contextMenus` (их нет в Firefox для Android) расширение больше не падает: горячие клавиши,
+  «Перевести выделенное» и подсказка при наведении на телефоне недоступны и скрыты в настройках.
+- В Firefox не показывается провайдер «Встроенный в Chrome» (Translator API есть только в Chrome 138+ на компьютере).
+- Закрытый Shadow DOM читается и в Firefox (`element.openOrClosedShadowRoot`).
+
 ## v1.4.2 — 2026-11-01
 
 ### Исправлено
