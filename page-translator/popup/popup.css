@@ -23,6 +23,7 @@
 * { box-sizing: border-box; }
 body {
   width: 300px;
+  max-width: 100%;
   margin: 0;
   padding: 12px 14px;
   font: 13px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -63,3 +64,12 @@ select {
 footer { display: flex; justify-content: space-between; margin-top: 14px; font-size: 12px; }
 footer a { color: var(--accent); text-decoration: none; }
 .hint { color: var(--muted); }
+
+/* Телефон (Firefox для Android): popup на всю ширину, крупные элементы под палец. */
+@media (pointer: coarse) {
+  body { width: auto; padding: 16px; font-size: 16px; }
+  .primary { padding: 14px; font-size: 17px; }
+  select { padding: 12px 10px; font-size: 16px; }
+  .switch input { width: 22px; height: 22px; }
+  footer { font-size: 15px; }
+}

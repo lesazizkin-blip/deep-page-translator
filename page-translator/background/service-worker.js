@@ -1,4 +1,4 @@
-// Background service worker: маршрутизация сообщений, очередь, кеш,
+// Background service worker (в Firefox — event page, тот же файл): маршрутизация сообщений, очередь, кеш,
 // состояние вкладок, горячая клавиша и контекстное меню.
 
 import '../shared/constants.js';
@@ -219,7 +219,8 @@ async function toggleTab(tabId) {
   return !active;
 }
 
-chrome.commands.onCommand.addListener(async (command, tab) => {
+// В Firefox для Android нет ни commands, ни contextMenus — просто не подписываемся.
+chrome.commands?.onCommand.addListener(async (command, tab) => {
   if (command !== 'toggle-translation') return;
   if (!tab) [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (tab?.id) await toggleTab(tab.id);
@@ -230,6 +231,7 @@ chrome.commands.onCommand.addListener(async (command, tab) => {
 const MENU_ID = 'pt-translate-selection';
 
 chrome.runtime.onInstalled.addListener(async () => {
+  if (!chrome.contextMenus) return;
   await chrome.contextMenus.removeAll();
   chrome.contextMenus.create({
     id: MENU_ID,
@@ -240,7 +242,7 @@ chrome.runtime.onInstalled.addListener(async () => {
 
 const escapeHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+chrome.contextMenus?.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId !== MENU_ID || !tab?.id) return;
   const original = info.selectionText || '';
   const msg = { type: 'pt:showSelection', original };

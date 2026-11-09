@@ -23,8 +23,12 @@ async function load() {
   $('translateOutput').checked = s.translateOutput;
   refreshCacheStats();
 
-  const cmd = (await chrome.commands.getAll()).find((c) => c.name === 'toggle-translation');
+  const cmd = ((await chrome.commands?.getAll()) || []).find((c) => c.name === 'toggle-translation');
   $('chromeShortcut').textContent = cmd?.shortcut || 'не задано';
+
+  // Телефон (Firefox для Android): нет клавиатуры и наведения курсора.
+  if (!chrome.commands) $('hotkeySection').hidden = true;
+  if (matchMedia('(hover: none)').matches) $('tooltipSection').hidden = true;
 }
 
 // ---- Запись своего сочетания клавиш ----
@@ -136,7 +140,7 @@ $('clearCache').addEventListener('click', async () => {
 
 $('shortcuts').addEventListener('click', (e) => {
   e.preventDefault();
-  chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
+  chrome.tabs.create({ url: PT_IS_FIREFOX ? 'about:addons' : 'chrome://extensions/shortcuts' });
 });
 
 load();

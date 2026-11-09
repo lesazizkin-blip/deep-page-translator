@@ -78,3 +78,8 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 .err, .field small.err { color: var(--err); }
 a { color: var(--accent); }
 kbd, code { font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
+
+@media (pointer: coarse) {
+  input, select, textarea, button { font-size: 16px; min-height: 44px; }
+  input[type="checkbox"] { min-height: 0; width: 22px; height: 22px; }
+}
